@@ -71,7 +71,7 @@ for _ in range(iterations + 1):
         crossTable_df = crossTable_df.set_index('')
     
 #for tourney_id in tournaments.id.values:
-    tourney_id = tournaments.id.loc[1]
+    tourney_id = tournaments.id.loc[0]
     tourney = lich.tournament_standings(tourney_id)
     tourney_date = lich.tournament(tourney_id)['startsAt'].split('T')[0]
 
