@@ -45,7 +45,7 @@ GP_instance = VT_Gsheet.get_worksheet(0)
 CT_instance = VT_Gsheet.get_worksheet(1)
 MVP_instance = VT_Gsheet.get_worksheet(2)
 
-point_distribution = {1:105,2:77,3:65,4:53,5:45,6:37,7:29,8:21,9:5,10:5,11:5,12:5,13:5,14:5,15:5,16:5,17:5,18:5,19:5,20:5}
+point_distribution = {1:105,2:77,3:65,4:53,5:45,6:37,7:29,8:21,9:5}
 
 tournaments = pd.read_json('https://lichess.org/api/team/{}/arena'.format(teamName) , lines = True)
 tournaments = tournaments[tournaments.fullName.str.contains('2022')].sort_values('startsAt')
@@ -83,7 +83,7 @@ for _ in range(iterations + 1):
         username = player['name']
         num_games = len(player['sheet']['scores'])
         rank = player['rank']
-        gp_score = point_distribution[rank]*(num_games > 0)
+        gp_score = point_distribution[min(rank, 9)]*(num_games > 0)
 
         name_list.append(username)
         rank_list.append(rank)
