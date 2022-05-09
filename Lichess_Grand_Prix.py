@@ -26,9 +26,10 @@ def drop_k(score_vector,k):
 #%% CONFIGS
 
 configs_df = pd.read_csv('C:/Users/Brian/Documents/VT_Grand_Prix_2022/GP_script_configs.txt', index_col = 'parameter')
-teamName = configs_df['value'].loc['teamName']
+team_name = configs_df['value'].loc['team_name']
+work_sheet = configs_df['value'].loc['work_sheet']
 API_path = configs_df['value'].loc['API_filepath']
-
+MVP_path = configs_df['value'].loc['MVP_filepath']
 #%%
 # define the scope #could make function here for "setup gDrive connection"
 scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
@@ -47,7 +48,7 @@ MVP_instance = VT_Gsheet.get_worksheet(2)
 
 point_distribution = {1:105,2:77,3:65,4:53,5:45,6:37,7:29,8:21,9:5}
 
-tournaments = pd.read_json('https://lichess.org/api/team/{}/arena'.format(teamName) , lines = True)
+tournaments = pd.read_json('https://lichess.org/api/team/{}/arena'.format(team_name) , lines = True)
 tournaments = tournaments[tournaments.fullName.str.contains('2022')].sort_values('startsAt')
 #%%
 
@@ -63,7 +64,7 @@ else:
     iterations = 0 #for one time runs, such as updating MVP for the week.
 
 for _ in range(iterations + 1):    
-    mvp_df = pd.read_csv('C:/Users/Brian/Documents/VT_Grand_Prix_2022/MVPs_2022.txt',header = None, index_col = False)
+    mvp_df = pd.read_csv(MVP_path,header = None, index_col = False)
     #crossTable_df = pd.DataFrame() #CT_instance! Then hopefully eliminate for loop on tournament ID! Only use the top tournament in the tournaments df
     crossTable_df = pd.DataFrame(CT_instance.get_all_records())
     
@@ -144,11 +145,3 @@ for _ in range(iterations + 1):
     
     if tournament_status == 20:
         time.sleep(refresh_rate_seconds)
-#%% SCRATCH CODE
-#Drop2 = crossTable_df.apply(lambda x: drop_k(x,2),axis = 1)
-#Drop2.name = 'Drop 2'
-#
-#GP_table = pd.concat([GP_table,Drop2],axis = 1)
-
-# GP_table.to_csv('C:/Users/bjenks2011/Desktop/VT_GP_2021/VT_GP_2021_Totals.csv',header = True)
-# crossTable_df.to_csv('C:/Users/bjenks2011/Desktop/VT_GP_2021/VT_GP_2021_crosstable.csv',header = True)
