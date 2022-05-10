@@ -30,6 +30,7 @@ Before running the script for the first time, ensure the following:
 * Your google drive account is set up for accepting python script inputs. 
   + A great tutorial for this can be found at https://www.analyticsvidhya.com/blog/2020/07/read-and-update-google-spreadsheets-with-python/
 * You already have a team established on lichess.org.
+* Edit the configs file to establish where the MVP and API files are located.
 
 ### Periodically
 Now, on a weekly basis (or a periodic basis established by your team):
