@@ -40,8 +40,7 @@ creds = ServiceAccountCredentials.from_json_keyfile_name(API_path, scope)
 # authorize the clientsheet 
 client = gspread.authorize(creds)
 
-#TODO ensure code is pointed to the PROD GP Standings, not TEST
-VT_Gsheet = client.open('TEST VT Grand Prix Standings 2022')
+VT_Gsheet = client.open(work_sheet)
 GP_instance = VT_Gsheet.get_worksheet(0)
 CT_instance = VT_Gsheet.get_worksheet(1)
 MVP_instance = VT_Gsheet.get_worksheet(2)
