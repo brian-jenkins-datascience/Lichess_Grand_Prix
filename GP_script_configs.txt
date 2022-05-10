@@ -1,0 +1,5 @@
+parameter,value
+team_name,sample-team
+work_sheet,Sample Worksheet
+API_filepath,path/to/Lichess_Grand_Prix/API.json
+MVP_filepath,path/to/Lichess_Grand_Prix/MVPs.txt

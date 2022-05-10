@@ -25,7 +25,7 @@ def drop_k(score_vector,k):
 
 #%% CONFIGS
 
-configs_df = pd.read_csv('C:/Users/Brian/Documents/VT_Grand_Prix_2022/GP_script_configs.txt', index_col = 'parameter')
+configs_df = pd.read_csv('C:/Users/Brian/Documents/VT_Grand_Prix_2022/GP_script_configs.txt', index_col = 'parameter') #Point this to your config file!
 team_name = configs_df['value'].loc['team_name']
 work_sheet = configs_df['value'].loc['work_sheet']
 API_path = configs_df['value'].loc['API_filepath']
@@ -64,13 +64,12 @@ else:
 
 for _ in range(iterations + 1):    
     mvp_df = pd.read_csv(MVP_path,header = None, index_col = False)
-    #crossTable_df = pd.DataFrame() #CT_instance! Then hopefully eliminate for loop on tournament ID! Only use the top tournament in the tournaments df
+
     crossTable_df = pd.DataFrame(CT_instance.get_all_records())
     
     if len(crossTable_df.columns) > 0:
         crossTable_df = crossTable_df.set_index('')
     
-#for tourney_id in tournaments.id.values:
     tourney_id = tournaments.id.loc[0]
     tourney = lich.tournament_standings(tourney_id)
     tourney_date = lich.tournament(tourney_id)['startsAt'].split('T')[0]
