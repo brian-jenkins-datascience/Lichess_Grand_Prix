@@ -28,12 +28,12 @@ def drop_k(score_vector,k):
 #%% CONFIGS
 
 configs_df = pd.read_csv('C:/Users/Brian/Documents/VT_Grand_Prix_2022/GP_script_configs.txt', index_col = 'parameter') #Point this to your config file!
+point_distribution = {1:105,2:77,3:65,4:53,5:45,6:37,7:29,8:21,9:5}
 
 team_website = configs_df['value'].loc['team_website'] 
 work_sheet = configs_df['value'].loc['work_sheet']
 API_path = configs_df['value'].loc['API_filepath']
 MVP_path = configs_df['value'].loc['MVP_filepath']
-point_distribution = eval(configs_df['value'].loc['point_distribution'])
 tourney_filter = configs_df['value'].loc['tourney_filter']
 refresh_rate_seconds = int(configs_df['value'].loc['refresh_rate_seconds'])
 use_MVP = eval(configs_df['value'].loc['use_MVP'])
@@ -121,16 +121,19 @@ for _ in range(iterations + 1):
         mvp_df = pd.read_csv(MVP_path,header = None, index_col = False)
         mvp_df.columns = ['MVP'] 
         MVP_scores = mvp_df['MVP'].value_counts() * MVP_points
+
+    GP_table = GP_table.sort_values(ascending = False)
+    GP_table = GP_table.to_frame()
+    
+    if use_MVP:
         for user in MVP_scores.index: 
             if user in GP_table.index:
-                GP_table[user] += MVP_scores[user] 
+                GP_table.loc[user] += MVP_scores[user] 
     
         GP_table['Num_MVPs'] = mvp_df.MVP.value_counts()
         GP_columns = ['','Grand Prix Score', 'Number of MVPs']
     else:
         GP_columns = ['','Grand Prix Score']
-    GP_table = GP_table.sort_values(ascending = False)
-    GP_table = GP_table.to_frame()
     GP_table = GP_table.fillna(0)
 
     websites = ['https://lichess.org/tournament/' + tid for tid in tournaments.id]
@@ -152,7 +155,7 @@ for _ in range(iterations + 1):
         
         MVP_instance = VT_Gsheet.get_worksheet(2)
         MVP_instance.clear()
-        MVP_instance.insert_rows([MVP_columns] + tournaments[['fullName', 'website']].values.tolist())
+        MVP_instance.insert_rows([MVP_columns] + tournaments.sort_values('startsAt')[['fullName', 'website']].values.tolist())
         MVP_instance.update('C2:C', mvp_df.values.tolist())
     
     if tournament_status == 20:
