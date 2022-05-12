@@ -4,17 +4,17 @@ Created on Fri May  6 23:30:34 2022
 
 @author: Brian
 """
-# https://lichess.org/api/team/{teamId}/arena
+# Team arena tournaments: https://lichess.org/api/team/{teamId}/arena
 
 
-#%%
+#%% LIBRARIES
 import gspread
 import numpy as np
 import pandas as pd
 from oauth2client.service_account import ServiceAccountCredentials
 import lichess.api as lich
 import time
-#%%
+#%% FUNCTIONS
 def top_k(score_vector,k):
     
     return int(np.sum(sorted(score_vector)[::-1][:k]))
@@ -26,12 +26,14 @@ def drop_k(score_vector,k):
 #%% CONFIGS
 
 configs_df = pd.read_csv('C:/Users/Brian/Documents/VT_Grand_Prix_2022/GP_script_configs.txt', index_col = 'parameter') #Point this to your config file!
+
 team_name = configs_df['value'].loc['team_name']
 work_sheet = configs_df['value'].loc['work_sheet']
 API_path = configs_df['value'].loc['API_filepath']
 MVP_path = configs_df['value'].loc['MVP_filepath']
-#%%
-# define the scope #could make function here for "setup gDrive connection"
+point_distribution = eval(configs_df['value'].loc['point_distribution'])
+tourney_filter = configs_df['value'].loc['tourney_filter']
+#%% GOOGLE & LICHESS API SETUP
 scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
 
 # add credentials to the account
@@ -45,14 +47,19 @@ GP_instance = VT_Gsheet.get_worksheet(0)
 CT_instance = VT_Gsheet.get_worksheet(1)
 MVP_instance = VT_Gsheet.get_worksheet(2)
 
-point_distribution = {1:105,2:77,3:65,4:53,5:45,6:37,7:29,8:21,9:5}
 
 tournaments = pd.read_json('https://lichess.org/api/team/{}/arena'.format(team_name) , lines = True)
-tournaments = tournaments[tournaments.fullName.str.contains('2022')].sort_values('startsAt')
-#%%
+if tourney_filter != '':
+    tournaments = tournaments[tournaments.fullName.str.contains(tourney_filter)] #filters tournaments to those taking place in 2022
 
+
+#%% PROCESS LICHESS DATA
+
+#TODO Make simultaneous evaluation of all tournaments or periodic updates an option in config file
+#TODO make a function to run either simul or periodic updates
+#Determines tournament status for latest tournament 
 tournament_status = tournaments.loc[0].status
-refresh_rate_seconds = 30
+refresh_rate_seconds = 30 #TODO move to config file
 
 if tournament_status == 20: #10 = created, 20 = started, 30 = finished
     
@@ -62,7 +69,9 @@ if tournament_status == 20: #10 = created, 20 = started, 30 = finished
 else:
     iterations = 0 #for one time runs, such as updating MVP for the week.
 
-for _ in range(iterations + 1):    
+
+for _ in range(iterations + 1):  
+    #TODO combine all MVP lines into one section and make this optional in the configs, along with number of points MVP gets
     mvp_df = pd.read_csv(MVP_path,header = None, index_col = False)
 
     crossTable_df = pd.DataFrame(CT_instance.get_all_records())
@@ -78,11 +87,12 @@ for _ in range(iterations + 1):
     rank_list = []
     gp_list = []
     
+    
     for player in tourney:
         username = player['name']
         num_games = len(player['sheet']['scores'])
         rank = player['rank']
-        gp_score = point_distribution[min(rank, 9)]*(num_games > 0)
+        gp_score = point_distribution[min(rank, len(point_distribution))]*(num_games > 0)
 
         name_list.append(username)
         rank_list.append(rank)

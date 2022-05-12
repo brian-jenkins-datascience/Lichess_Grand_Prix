@@ -3,3 +3,4 @@ team_name,sample-team
 work_sheet,Sample Worksheet
 API_filepath,path/to/Lichess_Grand_Prix/API.json
 MVP_filepath,path/to/Lichess_Grand_Prix/MVPs.txt
+point_distribution,{1:105,2:77,3:65,4:53,5:45,6:37,7:29,8:21,9:5}
