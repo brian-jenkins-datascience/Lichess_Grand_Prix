@@ -95,3 +95,4 @@ Note that this script is built to run weekly as each tournament is running, howe
 * Update Standings with MVP vote
 * Push results to Google Drive
 * Repeats as necessary
+* If live updating, then this script will terminate once it senses that the tournament is over (Lichess status code 30)
