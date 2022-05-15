@@ -31,10 +31,22 @@ Before running the script for the first time, ensure the following:
   + A great tutorial for this can be found at https://www.analyticsvidhya.com/blog/2020/07/read-and-update-google-spreadsheets-with-python/
 * You already have a team established on lichess.org.
 * Edit the configs file to establish where the MVP and API files are located. The following configs should be adjusted:
-  + team_name: The name of your team on lichess. Spaces get replaced with dashes, and all characters are lowercase.
-  + work_sheet: The name of your Google Sheet in Google Drive. Open an empty google spreadsheet in your drive if you do not currently have one.
-  + API_filepath: File path of your downloaded API json key from google's developer console
-  + MVP_filepath: File path of MVP text file
+  + `team_website`: your team's website ( https://lichess.org/team/{teamId} )
+  + `work_sheet`: Your Google Worksheet Title
+  + `API_filepath`: filepath to your API json file
+  + `MVP_filepath`: filepath to your MVP list, optional
+    - Structure is a single column list with no header. 
+  + `use_tourney_filter`: True if you are filtering your tournaments to those whose title contains a substring given by `tourney_filter`
+  + `tourney_filter`: pattern to filter the tournament titles used in the Grand Prix
+  + `refresh_rate_seconds`: 30
+  + `use_MVP`: True
+  + `MVP_points`: 5
+  + `num_scores_dropped`: 2
+  + `min_num_games`: 1
+  + `live_updates`: True
+  + `eval_multiple_tournaments`: False
+  + `google_API_delay`: 0
+  + `reset_crosstable`: True
 
 ### Periodically
 Now, on a weekly basis (or a periodic basis established by your team):
