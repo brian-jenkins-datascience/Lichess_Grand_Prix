@@ -43,7 +43,9 @@ MVP_points = int(configs_df['value'].loc['MVP_points'])
 min_num_games = int(configs_df['value'].loc['min_num_games'])
 live_updates = eval(configs_df['value'].loc['live_updates'])
 eval_multiple_tournaments = eval(configs_df['value'].loc['eval_multiple_tournaments'])
-#TODO google_API_delay config
+google_API_delay = int(configs_df['value'].loc['google_API_delay'])
+reset_crosstable = eval(configs_df['value'].loc['reset_crosstable'])
+
 #%% GOOGLE & LICHESS API SETUP
 scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
 
@@ -56,6 +58,9 @@ client = gspread.authorize(creds)
 VT_Gsheet = client.open(work_sheet)
 GP_instance = VT_Gsheet.get_worksheet(0)
 CT_instance = VT_Gsheet.get_worksheet(1)
+
+if reset_crosstable:
+    CT_instance.clear()
 
 team_name = team_website.split('/')[-1]
 tournaments = pd.read_json('https://lichess.org/api/team/{}/arena'.format(team_name) , lines = True)
@@ -102,8 +107,8 @@ for tourn_index in reversed(range(num_tourneys)):
             username = player['name']
             num_games = len(player['sheet']['scores'])
             rank = player['rank']
-            gp_score = point_distribution[min(rank, len(point_distribution))]*(num_games > min_num_games) # the last value in the pt distribution determines how many points everyone below that rank receives
-            # registering without playing at least min_num_games nullifies your score for that tournament. set min_num_games = -1 to not restrict points based on games played
+            gp_score = point_distribution[min(rank, len(point_distribution))]*(num_games >= min_num_games) # the last value in the pt distribution determines how many points everyone below that rank receives
+            # registering without playing at least min_num_games nullifies your score for that tournament. set min_num_games = 0 to not restrict points based on games played
     
             name_list.append(username)
             rank_list.append(rank)
@@ -169,3 +174,5 @@ for tourn_index in reversed(range(num_tourneys)):
         
         if tournament_status == 20:
             time.sleep(refresh_rate_seconds)
+
+        time.sleep(google_API_delay)

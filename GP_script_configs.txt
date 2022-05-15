@@ -1,6 +1,6 @@
 parameter,value
 team_website,https://lichess.org/team/{teamId}
-work_sheet,Sample Worksheet
+work_sheet,Your Google Worksheet Title
 API_filepath,path/to/Lichess_Grand_Prix/API.json
 MVP_filepath,path/to/Lichess_Grand_Prix/MVPs.txt
 use_tourney_filter,False
@@ -12,3 +12,5 @@ num_scores_dropped,2
 min_num_games,0
 live_updates,False
 eval_multiple_tournaments,True
+google_API_delay,0
+reset_crosstable,False
