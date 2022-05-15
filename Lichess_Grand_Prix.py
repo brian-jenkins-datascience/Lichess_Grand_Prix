@@ -27,7 +27,8 @@ def drop_k(score_vector,k):
 
 #%% CONFIGS
 
-configs_df = pd.read_csv('C:/Users/Brian/Documents/VT_Grand_Prix_2022/GP_script_configs.txt', index_col = 'parameter') #Point this to your config file!
+configs_filepath = 'C:/Users/Brian/Documents/VT_Grand_Prix_2022/GP_script_configs.txt'
+configs_df = pd.read_csv(configs_filepath, index_col = 'parameter') #Point this to your config file!
 point_distribution = {1:105,2:77,3:65,4:53,5:45,6:37,7:29,8:21,9:5}
 
 team_website = configs_df['value'].loc['team_website'] 
