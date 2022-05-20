@@ -24,6 +24,47 @@ def drop_k(score_vector,k):
         return int(np.sum(sorted(score_vector)[::-1][:-k]))
     else:
         return int(np.sum(score_vector))
+    
+def update_crosstable(crossTable_df,tourney_id,point_distribution, min_num_games, num_scores_dropped):
+    if len(crossTable_df.columns) > 0:
+        crossTable_df = crossTable_df.set_index('')
+
+    tourney = lich.tournament_standings(tourney_id)
+    tourney_date = lich.tournament(tourney_id)['startsAt'].split('T')[0]
+    
+    if tourney_date in crossTable_df.columns:
+        crossTable_df = crossTable_df.drop(columns=tourney_date)
+    
+    name_list = []
+    rank_list = []
+    gp_list = []
+    
+    
+    for player in tourney:
+        username = player['name']
+        num_games = len(player['sheet']['scores'])
+        rank = player['rank']
+        gp_score = point_distribution[min(rank, len(point_distribution))]*(num_games >= min_num_games)
+        
+        # The last value in the pt distribution determines how many points everyone below that rank receives
+        # Registering without playing at least min_num_games nullifies your score for that tournament. 
+        # Set min_num_games = 0 to not restrict points based on games played
+        
+        name_list.append(username)
+        rank_list.append(rank)
+        gp_list.append(gp_score)
+    
+    tourney_df = pd.DataFrame(gp_list , index = name_list, columns = [tourney_date])
+    
+    if tourney_df.columns[0] not in crossTable_df.columns:
+        crossTable_df = pd.concat([crossTable_df,tourney_df],axis = 1,sort = False)
+    else:
+        crossTable_df[tourney_df.columns[0]] = tourney_df.T.iloc[0]
+    
+    crossTable_df = crossTable_df.fillna(0)
+    crossTable_df = crossTable_df.sort_index(key=lambda x: x.str.lower()) 
+    
+    return crossTable_df
 
 #%% CONFIGS
 
@@ -56,6 +97,7 @@ creds = ServiceAccountCredentials.from_json_keyfile_name(API_path, scope)
 # authorize the clientsheet 
 client = gspread.authorize(creds)
 
+#Before first time run: Ensure your Google Sheets file has 3 sheets.
 VT_Gsheet = client.open(work_sheet)
 GP_instance = VT_Gsheet.get_worksheet(0)
 CT_instance = VT_Gsheet.get_worksheet(1)
@@ -88,49 +130,24 @@ else:
     num_tourneys = 1
 
 for tourn_index in reversed(range(num_tourneys)):
-
+    
+    tourn_name = tournaments.loc[tourn_index]['fullName']
+    tourn_variant = tournaments.loc[tourn_index]['perf']['name']
+    tourn_clock = int(tournaments.loc[tourn_index]['clock']['limit'] / 60)
+    tourn_inc = tournaments.loc[tourn_index]['clock']['increment']
+    print("Processing {}: {} {} + {}".format(tourn_name, tourn_variant, tourn_clock, tourn_inc))
+    
     for _ in range(iterations + 1):  
         crossTable_df = pd.DataFrame(CT_instance.get_all_records())
+        num_CT_cols = crossTable_df.shape[1]
         
-        if len(crossTable_df.columns) > 0:
-            crossTable_df = crossTable_df.set_index('')
-        
-        tourney_id = tournaments.id.loc[tourn_index]
-        tourney = lich.tournament_standings(tourney_id)
-        tourney_date = lich.tournament(tourney_id)['startsAt'].split('T')[0]
-    
-        name_list = []
-        rank_list = []
-        gp_list = []
-        
-        
-        for player in tourney:
-            username = player['name']
-            num_games = len(player['sheet']['scores'])
-            rank = player['rank']
-            gp_score = point_distribution[min(rank, len(point_distribution))]*(num_games >= min_num_games) # the last value in the pt distribution determines how many points everyone below that rank receives
-            # registering without playing at least min_num_games nullifies your score for that tournament. set min_num_games = 0 to not restrict points based on games played
-    
-            name_list.append(username)
-            rank_list.append(rank)
-            gp_list.append(gp_score)
-        
-        tourney_df = pd.DataFrame(gp_list , index = name_list, columns = [tourney_date])
-        
-        if tourney_df.columns[0] not in crossTable_df.columns:
-            crossTable_df = pd.concat([crossTable_df,tourney_df],axis = 1,sort = False)
-        else:
-            crossTable_df[tourney_df.columns[0]] = tourney_df.T.iloc[0]
-        
-        crossTable_df = crossTable_df.fillna(0)
-        
+        tourney_id = tournaments.id.loc[tourn_index]        
+        crossTable_df = update_crosstable(crossTable_df,tourney_id,point_distribution, min_num_games, num_scores_dropped)
         if tournaments.shape[0] <= num_scores_dropped: 
             GP_table = crossTable_df.apply(lambda x: top_k(x,tournaments.shape[0]),axis = 1).sort_values(ascending = False)
         else:
             GP_table = crossTable_df.apply(lambda x: drop_k(x,num_scores_dropped),axis = 1).sort_values(ascending = False)
         GP_table.name = 'Grand Prix Score'
-    
-        crossTable_df = crossTable_df.sort_index(key=lambda x: x.str.lower()) #update pandas to 1.1.0
         
         if use_MVP:
             mvp_df = pd.read_csv(MVP_path,header = None, index_col = False)
@@ -146,21 +163,23 @@ for tourn_index in reversed(range(num_tourneys)):
                     GP_table.loc[user] += MVP_scores[user] 
         
             GP_table['Num_MVPs'] = mvp_df.MVP.value_counts()
-            GP_columns = ['','Grand Prix Score', 'Number of MVPs']
+            GP_columns = ['Rank','Username','Grand Prix Score', 'Number of MVPs']
         else:
-            GP_columns = ['','Grand Prix Score']
-        GP_table = GP_table.fillna(0)
-    
+            GP_columns = ['Rank','Username','Grand Prix Score']
+        
+        GP_table = GP_table.fillna(0).sort_values('Grand Prix Score', ascending = False)
+        GP_table_out = GP_table.reset_index().reset_index()
+        GP_table_out = GP_table_out.rename(columns={'index':'Username', 'level_0':'Rank'})
+        GP_table_out['Rank'] += 1
+          
         websites = ['https://lichess.org/tournament/' + tid for tid in tournaments.id]
         tournaments['website'] = websites
         
         GP_instance.clear()
-        GP_instance.insert_rows([GP_columns] + GP_table.reset_index().values.tolist())
+        GP_instance.insert_rows([GP_columns] + GP_table_out.values.tolist())
         
         CT_columns = crossTable_df.reset_index().columns.values.tolist()
         CT_columns[0] = ''
-        
-        
         CT_instance.clear()
         CT_instance.insert_rows([CT_columns] + crossTable_df.reset_index().values.tolist())
         
