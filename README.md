@@ -32,7 +32,7 @@ Before running the script for the first time, ensure the following:
 * You already have a team established on lichess.org.
 * Edit the configs file to establish where the MVP and API files are located. The following configs can be adjusted:
   + Inside the Script
-    + `configs_df`: The file path of your config file
+    + `configs_filepath`: The file path of your config file
     + `point_distribution`: The distribution of points per tournament for your Grand Prix. The amount of points given to the last entry will be given to everyone who finishes below that rank. 
       - Make the last value in your dictionary 0 to give everyone who finishes at that rank or below 0 points. 
   + Inside the Config File
@@ -95,3 +95,4 @@ Note that this script is built to run weekly as each tournament is running, howe
 * Update Standings with MVP vote
 * Push results to Google Drive
 * Repeats as necessary
+* If live updating, then this script will terminate once it senses that the tournament is over (Lichess status code 30)
