@@ -66,7 +66,7 @@ def update_crosstable(crossTable_df,tourney_id,point_distribution, min_num_games
     
     return crossTable_df
 
-#%% CONFIGS
+#%% CONFIGS (See README for details about configs)
 
 configs_filepath = 'C:/Users/Brian/Documents/VT_Grand_Prix_2022/GP_script_configs.txt'
 configs_df = pd.read_csv(configs_filepath, index_col = 'parameter') #Point this to your config file!
@@ -97,7 +97,7 @@ creds = ServiceAccountCredentials.from_json_keyfile_name(API_path, scope)
 # authorize the clientsheet 
 client = gspread.authorize(creds)
 
-#Before first time run: Ensure your Google Sheets file has 3 sheets.
+#Before first time run: Ensure your Google Sheets file has 2 sheets, 3 if using MVP feature.
 VT_Gsheet = client.open(work_sheet)
 GP_instance = VT_Gsheet.get_worksheet(0)
 CT_instance = VT_Gsheet.get_worksheet(1)
@@ -138,6 +138,7 @@ for tourn_index in reversed(range(num_tourneys)):
     print("Processing {}: {} {} + {}".format(tourn_name, tourn_variant, tourn_clock, tourn_inc))
     
     for _ in range(iterations + 1):  
+        #reads in previous crosstable information and updates with current tournament stats
         crossTable_df = pd.DataFrame(CT_instance.get_all_records())
         num_CT_cols = crossTable_df.shape[1]
         
@@ -149,11 +150,12 @@ for tourn_index in reversed(range(num_tourneys)):
             GP_table = crossTable_df.apply(lambda x: drop_k(x,num_scores_dropped),axis = 1).sort_values(ascending = False)
         GP_table.name = 'Grand Prix Score'
         
+        #if using MVP feature, counts number of MVPs each user has won and adjusts points accordingly
         if use_MVP:
             mvp_df = pd.read_csv(MVP_path,header = None, index_col = False)
             mvp_df.columns = ['MVP'] 
             MVP_scores = mvp_df['MVP'].value_counts() * MVP_points
-    
+        
         GP_table = GP_table.sort_values(ascending = False)
         GP_table = GP_table.to_frame()
         
@@ -167,6 +169,7 @@ for tourn_index in reversed(range(num_tourneys)):
         else:
             GP_columns = ['Rank','Username','Grand Prix Score']
         
+        #preps output of Grand Prix Standings 
         GP_table = GP_table.fillna(0).sort_values('Grand Prix Score', ascending = False)
         GP_table_out = GP_table.reset_index().reset_index()
         GP_table_out = GP_table_out.rename(columns={'index':'Username', 'level_0':'Rank'})
@@ -183,10 +186,8 @@ for tourn_index in reversed(range(num_tourneys)):
         CT_instance.clear()
         CT_instance.insert_rows([CT_columns] + crossTable_df.reset_index().values.tolist())
         
-        MVP_columns = ['Tournament Name', 'Website', 'MVP']
-        
         if use_MVP:
-            
+            MVP_columns = ['Tournament Name', 'Website', 'MVP']
             MVP_instance = VT_Gsheet.get_worksheet(2)
             MVP_instance.clear()
             MVP_instance.insert_rows([MVP_columns] + tournaments.sort_values('startsAt')[['fullName', 'website']].values.tolist())
