@@ -107,6 +107,7 @@ if reset_crosstable:
 
 team_name = team_website.split('/')[-1]
 tournaments = pd.read_json('https://lichess.org/api/team/{}/arena'.format(team_name) , lines = True)
+tournaments = tournaments[tournaments.status > 10]
 if use_tourney_filter:
     tournaments = tournaments[tournaments.fullName.str.contains(tourney_filter)].reset_index() #filters tournaments according to those containing the value of tourney_filter.
 
@@ -144,6 +145,14 @@ for tourn_index in reversed(range(num_tourneys)):
         
         tourney_id = tournaments.id.loc[tourn_index]        
         crossTable_df = update_crosstable(crossTable_df,tourney_id,point_distribution, min_num_games, num_scores_dropped)
+        #tie breaker data
+        tb_df = pd.DataFrame(np.sort(crossTable_df.values,axis = 1)[:,::-1],index = crossTable_df.index)
+        tb_df = tb_df.sort_values(by = list(np.arange(crossTable_df.shape[1])), ascending = False)
+        tb_dict = {}
+        for enum, idx in enumerate(tb_df.index):
+            tb_dict[idx] = enum + 1
+        tb_series = pd.Series(tb_dict,name='Tie Breaker Rank')
+        
         if tournaments.shape[0] <= num_scores_dropped: 
             GP_table = crossTable_df.apply(lambda x: top_k(x,tournaments.shape[0]),axis = 1).sort_values(ascending = False)
         else:
@@ -165,9 +174,13 @@ for tourn_index in reversed(range(num_tourneys)):
                     GP_table.loc[user] += MVP_scores[user] 
         
             GP_table['Num_MVPs'] = mvp_df.MVP.value_counts()
-            GP_columns = ['Rank','Username','Grand Prix Score', 'Number of MVPs']
+            GP_columns = ['Rank','Username','Grand Prix Score', 'Number of MVPs', 'Tie Breaker Rank']
         else:
-            GP_columns = ['Rank','Username','Grand Prix Score']
+            GP_columns = ['Rank','Username','Grand Prix Score', 'Tie Breaker Rank']
+        
+        #TODO concat tie breaker series into GP table
+        GP_table = pd.concat([GP_table,pd.Series(tb_dict,name='Tie Breaker Rank')], axis = 1)
+        GP_table = GP_table.sort_values(by = ['Grand Prix Score', 'Tie Breaker Rank'], ascending = [False, True])
         
         #preps output of Grand Prix Standings 
         GP_table = GP_table.fillna(0).sort_values('Grand Prix Score', ascending = False)
